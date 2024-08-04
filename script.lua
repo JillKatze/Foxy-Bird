@@ -1,5 +1,6 @@
 FOXY_VERSION = "1.0"
 
+TILE_SIZE = 16 --px
 INPUTS = { Left = 1, Right = 2, Up = 4, Down = 8, Main = 16, Alt = 32, Special = 64, Back = 128, Start = 256 }
 STATES = { Start = 0, Playing = 1, Paused = 2, Dead = 3, Exiting = 4}
 PIPE_TILE_IDS = { MainLeft = 128, MainRight = 129, UpLeft = 112, UpRight = 113, DownLeft = 144, DownRight = 145 }
@@ -15,6 +16,9 @@ BIG_PINK_TREE_HEIGHT = 8 --tiles
 BIG_PINK_TREE_TILE_IDS = {}
 add(BIG_PINK_TREE_TILE_IDS, 360)
 add(BIG_PINK_TREE_TILE_IDS, 616)
+BIG_TREE_COUNT = 10
+BIG_TREE_MIN_SPACING = 5*TILE_SIZE
+BIG_TREE_MAX_SPACING = 32*TILE_SIZE
 SMALL_TREE_WIDTH = 5 --tiles
 SMALL_TREE_HEIGHT = 5 --tiles
 SMALL_TREE_TILE_IDS = {}
@@ -22,11 +26,17 @@ add(SMALL_TREE_TILE_IDS, 338)
 add(SMALL_TREE_TILE_IDS, 498)
 add(SMALL_TREE_TILE_IDS, 658)
 add(SMALL_TREE_TILE_IDS, 663)
+SMALL_TREE_COUNT = 20
+SMALL_TREE_MIN_SPACING = 3*TILE_SIZE
+SMALL_TREE_MAX_SPACING = 16*TILE_SIZE
 BUSH_WIDTH = 3 --tiles
 BUSH_HEIGHT = 2 --tiles
 BUSH_TILE_IDS = {}
 add(BUSH_TILE_IDS, 818)
 add(BUSH_TILE_IDS, 822)
+BUSH_COUNT = 30
+BUSH_MIN_SPACING = TILE_SIZE
+BUSH_MAX_SPACING = 6*TILE_SIZE
 BUTTON_DEBOUNCE_FRAMES = 5
 EXIT_FRAMES = 60
 TERMINAL_VELOCITY = 4.0
@@ -39,7 +49,6 @@ HITBOX_HEIGHT = 16
 HITBOX_OFFSET_X = 5
 HITBOX_OFFSET_Y = -6
 JUMP_ANIM_FRAMES = 20
-TILE_SIZE = 16 --px
 BG_WIDTH = 110*TILE_SIZE
 BG_MOVE_FACTOR = 0.1
 SMALL_TREE_MOVE_FACTOR = 0.4
@@ -96,21 +105,6 @@ function reset_game_state(regenerate_trees)
         big_pink_trees = {}
         small_trees = {}
         bushes = {}
-        -- -- manually set up the bg elements that will be visible on the title screen
-        -- add(big_green_trees, { variant = 2, x = 90, y = 128 }) -- variant is 1-based bc it's used to access a lua table
-        -- add(big_green_trees, { variant = 2, x = 390, y = 128 })
-        -- add(small_trees, { variant = 1, x = 16, y = 176 })
-        -- add(small_trees, { variant = 2, x = 310, y = 176 })
-        -- add(bushes, { variant = 2, x = -24, y = 224 })
-        -- add(bushes, { variant = 1, x = 43, y = 224 })
-        -- add(bushes, { variant = 1, x = 126, y = 224 })
-        -- add(bushes, { variant = 1, x = 172, y = 224 })
-        -- add(bushes, { variant = 2, x = 201, y = 224 })
-        -- add(bushes, { variant = 1, x = 265, y = 224 })
-        -- add(bushes, { variant = 2, x = 291, y = 224 })
-        -- add(bushes, { variant = 1, x = 350, y = 224 })
-        -- add(bushes, { variant = 2, x = 400, y = 224 })
-        -- add(bushes, { variant = 2, x = 465, y = 224 })
         generate_bg_elements()
     end
 
@@ -217,15 +211,19 @@ function main_game_logic()
 
     touching_gap = false
     dead = false
+    holes_to_remove = {}
     for i=1,#hole_locations do
         if hole_locations[i].x + TILE_SIZE*2 < world_scroll then
-            del(hole_locations, i)
+            add(holes_to_remove, i)
             generate_hole()
         else
             touching_this_gap = player_hitbox.x + player_hitbox.width >= hole_locations[i].x and player_hitbox.x <= hole_locations[i].x + TILE_SIZE*2
             touching_gap = touching_gap or touching_this_gap
             dead = dead or (touching_this_gap and (player_hitbox.y <= hole_locations[i].y or player_hitbox.y + player_hitbox.height >= hole_locations[i].y + hole_locations[i].size))
         end
+    end
+    for i=1,#holes_to_remove do
+        del(hole_locations, holes_to_remove[i])
     end
 
     dead = dead or player_hitbox.y <= UPPER_DEATH_PLANE or player_hitbox.y + player_hitbox.height >= LOWER_DEATH_PLANE
@@ -361,8 +359,8 @@ function generate_big_trees()
         cur_x = max(big_green_trees[#big_green_trees].x, big_pink_trees[#big_pink_trees].x)
     end
 
-    while #big_green_trees + #big_pink_trees < 10 do
-        cur_x = cur_x + randint(5*TILE_SIZE, 32*TILE_SIZE)
+    while #big_green_trees + #big_pink_trees < BIG_TREE_COUNT do
+        cur_x = cur_x + randint(BIG_TREE_MIN_SPACING, BIG_TREE_MAX_SPACING)
         elem_type = randint(1, 20)
         if elem_type == 1 then
             add(big_pink_trees, { variant = randint(1, 3), x = cur_x, y = 128 })
@@ -379,8 +377,8 @@ function generate_small_trees()
         cur_x = small_trees[#small_trees].x
     end
 
-    while #small_trees < 20 do
-        cur_x = cur_x + randint(3*TILE_SIZE, 16*TILE_SIZE)
+    while #small_trees < SMALL_TREE_COUNT do
+        cur_x = cur_x + randint(SMALL_TREE_MIN_SPACING, SMALL_TREE_MAX_SPACING)
         elem_type = randint(1, 20)
         if elem_type == 1 then
             add(small_trees, { variant = randint(3, 5), x = cur_x, y = 176 })
@@ -397,8 +395,8 @@ function generate_bushes()
         cur_x = bushes[#bushes].x
     end
 
-    while #bushes < 30 do
-        cur_x = cur_x + randint(TILE_SIZE, 6*TILE_SIZE)
+    while #bushes < BUSH_COUNT do
+        cur_x = cur_x + randint(BUSH_MIN_SPACING, BUSH_MAX_SPACING)
         add(bushes, { variant = randint(1,3), x = cur_x, y = 224 })
     end
 end
