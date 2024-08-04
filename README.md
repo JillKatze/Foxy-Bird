@@ -1,6 +1,9 @@
 # Foxy Bird
 A minigame about flapping birds for the Kitsune Tails mod framework.
 
+## Demonstration
+[![Foxy Bird demo video on YouTube](https://img.youtube.com/vi/BNm8Sax9PPA/0.jpg)](https://www.youtube.com/watch?v=BNm8Sax9PPA)
+
 ## Installation
 From the official documentation:
 ```
