@@ -2,6 +2,7 @@
 A minigame about flapping birds for the Kitsune Tails mod framework.
 
 ## Demonstration
+On YouTube:
 [![Foxy Bird demo video on YouTube](https://img.youtube.com/vi/BNm8Sax9PPA/0.jpg)](https://www.youtube.com/watch?v=BNm8Sax9PPA)
 
 ## Installation
