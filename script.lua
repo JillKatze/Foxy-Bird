@@ -1,4 +1,4 @@
-FOXY_VERSION = "1.1"
+FOXY_VERSION = "1.1a"
 
 TILE_SIZE = 16 --px
 INPUTS = { Left = 1, Right = 2, Up = 4, Down = 8, Main = 16, Alt = 32, Special = 64, Back = 128, Start = 256 }
