@@ -1,8 +1,8 @@
-FOXY_VERSION = "1.0"
+FOXY_VERSION = "1.1"
 
 TILE_SIZE = 16 --px
 INPUTS = { Left = 1, Right = 2, Up = 4, Down = 8, Main = 16, Alt = 32, Special = 64, Back = 128, Start = 256 }
-STATES = { Start = 0, Playing = 1, Paused = 2, Dead = 3, Exiting = 4}
+STATES = { Start = 0, Playing = 1, Paused = 2, Dead = 3, Exiting = 4, TailsScreen = 5 }
 PIPE_TILE_IDS = { MainLeft = 128, MainRight = 129, UpLeft = 112, UpRight = 113, DownLeft = 144, DownRight = 145 }
 WORLD_SHEET_WIDTH = 32 --tiles
 GROUND_TILE_ID = 1
@@ -41,7 +41,11 @@ BUTTON_DEBOUNCE_FRAMES = 5
 EXIT_FRAMES = 60
 TERMINAL_VELOCITY = 4.0
 MAX_UPWARD_VELOCITY = -4.0
-SCROLL_SPEED = 2
+SCROLL_SPEEDS = { }
+add(SCROLL_SPEEDS, 2)
+add(SCROLL_SPEEDS, 2.5)
+add(SCROLL_SPEEDS, 3)
+add(SCROLL_SPEEDS, 4)
 GRAVITY = 0.1
 FLAP_POWER = 2.0
 HITBOX_WIDTH = 12
@@ -55,12 +59,24 @@ SMALL_TREE_MOVE_FACTOR = 0.4
 BIG_TREE_MOVE_FACTOR = 0.6
 BUSH_MOVE_FACTOR = 0.9
 HOLE_MIN_SIZE = 48 --px
-HOLE_MAX_SIZE = 128 --px
-HOLE_SPACING = 250 --px
+HOLE_MAX_SIZES = {}
+add(HOLE_MAX_SIZES, 128) --px
+add(HOLE_MAX_SIZES, 112) --px
+add(HOLE_MAX_SIZES, 96) --px
+add(HOLE_MAX_SIZES, 80) --px
+HOLE_SPACINGS = {}
+add(HOLE_SPACINGS, 250) --px
+add(HOLE_SPACINGS, 225) --px
 UPPER_DEATH_PLANE = 0
 LOWER_DEATH_PLANE = getheight() - TILE_SIZE
 MAX_ROTATION = 0.75 -- radians
 YUZU_ANIM_SPEED = 0.2
+ENEMY_ANIM_SPEED = 0.15
+
+H_SPACING_TAILS_MAX = 1
+V_SPACING_TAILS_MAX = 3
+SPEED_TAILS_MAX = 3
+ENEMY_TAILS_MAX = 2
 
 NEW_BEST_STRING = "WOW! IT'S A NEW RECORD!!"
 DEATH_STRINGS = {}
@@ -71,6 +87,42 @@ add(DEATH_STRINGS, "BETTER LUCK NEXT TIME")
 add(DEATH_STRINGS, "SO CLOSE")
 add(DEATH_STRINGS, "OUCH")
 
+TAILS_LEVEL_NAMES = {}
+TAILS_LEVEL_NAMES[0] = "JUST A KIT"
+add(TAILS_LEVEL_NAMES, "LITTLE FOX") -- 1
+add(TAILS_LEVEL_NAMES, "TRUSTY SIDEKICK") -- 2
+add(TAILS_LEVEL_NAMES, "BUSHY-TAILED UPSTART") -- 3
+add(TAILS_LEVEL_NAMES, "CONFIDENT CANINE") -- 4
+add(TAILS_LEVEL_NAMES, "FLYING FOX") -- 5
+add(TAILS_LEVEL_NAMES, "VULPINE CHALLENGER") -- 6
+add(TAILS_LEVEL_NAMES, "ROOKIE KITSUNE") -- 7
+add(TAILS_LEVEL_NAMES, "VETERAN KITSUNE") -- 8
+add(TAILS_LEVEL_NAMES, "NINE-TAILED KITSUNE") -- 9
+
+TAILS_LEVEL_COLORS = {}
+TAILS_LEVEL_COLORS[0] = 68
+add(TAILS_LEVEL_COLORS, 58) -- 1
+add(TAILS_LEVEL_COLORS, 48) -- 2
+add(TAILS_LEVEL_COLORS, 42) -- 3
+add(TAILS_LEVEL_COLORS, 34) -- 4
+add(TAILS_LEVEL_COLORS, 31) -- 5
+add(TAILS_LEVEL_COLORS, 26) -- 6
+add(TAILS_LEVEL_COLORS, 18) -- 7
+add(TAILS_LEVEL_COLORS, 13) -- 8
+add(TAILS_LEVEL_COLORS, 11) -- 9
+
+TAILS_LEVEL_OUTLINE_COLORS = {}
+TAILS_LEVEL_OUTLINE_COLORS[0] = 69
+add(TAILS_LEVEL_OUTLINE_COLORS, 66) -- 1
+add(TAILS_LEVEL_OUTLINE_COLORS, 47) -- 2
+add(TAILS_LEVEL_OUTLINE_COLORS, 41) -- 3
+add(TAILS_LEVEL_OUTLINE_COLORS, 38) -- 4
+add(TAILS_LEVEL_OUTLINE_COLORS, 30) -- 5
+add(TAILS_LEVEL_OUTLINE_COLORS, 17) -- 6
+add(TAILS_LEVEL_OUTLINE_COLORS, 17) -- 7
+add(TAILS_LEVEL_OUTLINE_COLORS,  9) -- 8
+add(TAILS_LEVEL_OUTLINE_COLORS,  1) -- 9
+
 DEBUG_MODE = false
 
 function init()
@@ -80,6 +132,10 @@ function init()
 
     last_best_score = 0
     best_score = 0
+    h_spacing_tails = 0
+    v_spacing_tails = 0
+    speed_tails = 0
+    enemy_tails = 0
     reset_game_state(true)
 
     playmus(title_music)
@@ -88,7 +144,7 @@ end
 function reset_game_state(regenerate_trees)
     player_x = getwidth()/4
     player_y = TILE_SIZE/2 + getheight()/2
-    player_x_vel = SCROLL_SPEED
+    player_x_vel = SCROLL_SPEEDS[1 + speed_tails]
     player_y_vel = 0
     player_x_accel = 0
     player_y_accel = GRAVITY
@@ -119,6 +175,7 @@ end
 
 function loadresources()
     yuzu = sprite("YuzuBird")
+    enemy = sprite("Rokurokubi")
     background_tiles = loadbuiltin("bg 1 and 2.json", "tilemap")
     world_blocks = loadbuiltin("introworld-b.png", "image")
     func_blocks = loadbuiltin("function_blocks.png", "image")
@@ -131,6 +188,7 @@ function loadresources()
     hit_sfx = loadbuiltin("hit2.ogg", "sound")
     menu_change_sfx = loadbuiltin("menu1.ogg", "sound")
     menu_execute_sfx = loadbuiltin("menu3.ogg", "sound")
+    stamps_image = loadbuiltin("stamp-icons.png", "image")
 end
 
 function update()
@@ -139,10 +197,10 @@ function update()
     if state == STATES.Start then
         if button_debounce_frames_remaining <= 0 then
             if input_just_pressed(INPUTS.Down) then
-                menu_choice = (menu_choice + 1) % 2
+                menu_choice = (menu_choice + 1) % 3
                 playsfx(menu_change_sfx)
             elseif input_just_pressed(INPUTS.Up) then
-                menu_choice = (menu_choice - 1) % 2
+                menu_choice = (menu_choice - 1) % 3
                 playsfx(menu_change_sfx)
             elseif input_just_pressed(INPUTS.Main) then
                 if menu_choice == 0 then
@@ -152,6 +210,10 @@ function update()
                     playmus(game_music)
                     playsfx(start_sfx, 175) -- powerup sound is mixed quiet in the file
                 elseif menu_choice == 1 then
+                    state = STATES.TailsScreen
+                    menu_choice = 0
+                    playsfx(menu_execute_sfx)
+                elseif menu_choice == 2 then
                     state = STATES.Exiting
                     playsfx(menu_execute_sfx)
                 end
@@ -165,6 +227,62 @@ function update()
         do_pause_menu_input(false)
     elseif state == STATES.Dead then
         do_pause_menu_input(true)
+    elseif state == STATES.TailsScreen then
+        if button_debounce_frames_remaining <= 0 then
+            if input_just_pressed(INPUTS.Down) then
+                if menu_choice == 4 then
+                    menu_choice = 0
+                elseif menu_choice > 1 then
+                    menu_choice = 4
+                else
+                    menu_choice = menu_choice + 2
+                end
+                playsfx(menu_change_sfx)
+                button_debounce_frames_remaining = BUTTON_DEBOUNCE_FRAMES
+            elseif input_just_pressed(INPUTS.Up) then
+                if menu_choice == 4 then
+                    menu_choice = 2
+                elseif menu_choice < 2 then
+                    menu_choice = 4
+                else
+                    menu_choice = menu_choice - 2
+                end
+                playsfx(menu_change_sfx)
+                button_debounce_frames_remaining = BUTTON_DEBOUNCE_FRAMES
+            end
+            if input_just_pressed(INPUTS.Left) or input_just_pressed(INPUTS.Right) then
+                if menu_choice ~= 4 then
+                    if menu_choice == 0 then
+                        menu_choice = 1
+                    elseif menu_choice == 1 then
+                        menu_choice = 0
+                    elseif menu_choice == 2 then
+                        menu_choice = 3
+                    elseif menu_choice == 3 then
+                        menu_choice = 2
+                    end
+                    playsfx(menu_change_sfx)
+                    button_debounce_frames_remaining = BUTTON_DEBOUNCE_FRAMES
+                end
+            end
+
+            if input_just_pressed(INPUTS.Main) then
+                if menu_choice == 0 then
+                    h_spacing_tails = (h_spacing_tails + 1) % (H_SPACING_TAILS_MAX + 1)
+                elseif menu_choice == 1 then
+                    v_spacing_tails = (v_spacing_tails + 1) % (V_SPACING_TAILS_MAX + 1)
+                elseif menu_choice == 2 then
+                    speed_tails = (speed_tails + 1) % (SPEED_TAILS_MAX + 1)
+                elseif menu_choice == 3 then
+                    enemy_tails = (enemy_tails + 1) % (ENEMY_TAILS_MAX + 1)
+                elseif menu_choice == 4 then
+                    state = STATES.Start
+                    menu_choice = 0
+                end
+                playsfx(menu_execute_sfx)
+                button_debounce_frames_remaining = BUTTON_DEBOUNCE_FRAMES
+            end
+        end
     elseif state == STATES.Exiting then
         exit_frames_remaining = exit_frames_remaining - 1
 
@@ -240,7 +358,7 @@ function main_game_logic()
         end
         death_string = death_string.."\nSCORE: "..score
     elseif was_touching_gap and not touching_gap then
-        score = score + 1
+        score = score + int(100 * (1 + 0.25*(enemy_tails + v_spacing_tails)))
         playsfx(score_sfx)
         if score > best_score then
             best_score = score
@@ -260,15 +378,43 @@ function get_player_hitbox_in_worldspace()
 end
 
 -- x,y coord points to top-left of the pipe. height is in 16px tiles
-function draw_pipe(x, y, height)
-    drawtile(func_blocks, PIPE_TILE_IDS.UpLeft, x, y)
-    drawtile(func_blocks, PIPE_TILE_IDS.UpRight, x+TILE_SIZE, y)
-    for i=1,height-2 do
-        drawtile(func_blocks, PIPE_TILE_IDS.MainLeft, x, y+(TILE_SIZE*i))
-        drawtile(func_blocks, PIPE_TILE_IDS.MainRight, x+TILE_SIZE, y+(TILE_SIZE*i))
+function draw_pipe(x, y, height, top_has_enemy, bottom_has_enemy)
+    -- "top" and "bottom" here are flipped from where these are actually called, because "top" here refers to the top of the pipe, but only the top of the bottom pipe is visible!
+    pipe_height = height
+    top_location = y
+    if top_has_enemy then
+        top_location = top_location + 1.5*TILE_SIZE
     end
-    drawtile(func_blocks, PIPE_TILE_IDS.DownLeft, x, y+(TILE_SIZE*(height-1)))
-    drawtile(func_blocks, PIPE_TILE_IDS.DownRight, x+TILE_SIZE, y+(TILE_SIZE*(height-1)))
+    if bottom_has_enemy then
+        pipe_height = pipe_height - 1
+        top_location = top_location - 0.5*TILE_SIZE
+    end
+
+    distance_to_player = x - player_x -- x is already in screen space coords
+    if distance_to_player > 80 then
+        enemy_emergence = 0.2
+    elseif distance_to_player > 25 then
+        enemy_emergence = 1.0 - (distance_to_player - 25.0)/45.0
+        enemy_emergence = 0.2 + 0.8*enemy_emergence*enemy_emergence
+    else
+        enemy_emergence = 1.0
+    end
+    
+    if top_has_enemy then
+        drawsprite(enemy, x + TILE_SIZE, top_location + 2*TILE_SIZE*(1.0-enemy_emergence))
+    end
+    if bottom_has_enemy then
+        drawsprite(enemy, x + TILE_SIZE, y + TILE_SIZE*(height+1.5) - 2*TILE_SIZE*(1.0-enemy_emergence), 3.14159)
+    end
+
+    drawtile(func_blocks, PIPE_TILE_IDS.UpLeft, x, top_location)
+    drawtile(func_blocks, PIPE_TILE_IDS.UpRight, x+TILE_SIZE, top_location)
+    for i=1,pipe_height-2 do
+        drawtile(func_blocks, PIPE_TILE_IDS.MainLeft, x, top_location+(TILE_SIZE*i))
+        drawtile(func_blocks, PIPE_TILE_IDS.MainRight, x+TILE_SIZE, top_location+(TILE_SIZE*i))
+    end
+    drawtile(func_blocks, PIPE_TILE_IDS.DownLeft, x, top_location+(TILE_SIZE*(pipe_height-1)))
+    drawtile(func_blocks, PIPE_TILE_IDS.DownRight, x+TILE_SIZE, top_location+(TILE_SIZE*(pipe_height-1)))
 end
 
 function draw_ground()
@@ -332,14 +478,18 @@ end
 
 function generate_hole()
     if #hole_locations == 0 then
-        ecks = 2*HOLE_SPACING
+        ecks = 2*HOLE_SPACINGS[1]
     else
-        ecks = hole_locations[#hole_locations].x + HOLE_SPACING
+        ecks = hole_locations[#hole_locations].x + HOLE_SPACINGS[1 + h_spacing_tails]
     end
 
-    hole_size = randint(HOLE_MIN_SIZE, HOLE_MAX_SIZE)
-    why = randint(2*TILE_SIZE, getheight() - hole_size - 2*TILE_SIZE)
-    add(hole_locations, { x = ecks, y = why, size = hole_size })
+    hole_size = randint(HOLE_MIN_SIZE, HOLE_MAX_SIZES[1 + v_spacing_tails])
+    why = randint(3*TILE_SIZE, getheight() - hole_size - 3*TILE_SIZE)
+    has_enemy = 0
+    if (enemy_tails == 1 and randint(0, 5) == 0) or (enemy_tails == 2 and randint(0, 3) <= 1) then
+        has_enemy = randint(1, 4)
+    end
+    add(hole_locations, { x = ecks, y = why, size = hole_size, has_enemy = has_enemy })
 end
 
 function generate_bg_elements()
@@ -469,6 +619,16 @@ function render()
     draw_bg_elements()
     draw_ground()
 
+    -- use some rects to hack in a white tip to the tail lol
+    drawrect(11, 10, 10, 6)
+    drawrect(15, 3, 3, 7)
+    drawrect(18, 6, 3, 5)
+    tails_level = h_spacing_tails + v_spacing_tails + speed_tails + enemy_tails
+    color(25)
+    drawimg(stamps_image, 0, 0, 0, 24, 23, 23)
+    color()
+    drawtext("x"..tostr(tails_level), TILE_SIZE*1.5, TILE_SIZE*0.25, TAILS_LEVEL_COLORS[tails_level], TAILS_LEVEL_OUTLINE_COLORS[tails_level], TILE_SIZE*2, TILE_SIZE, 0, 1)
+
     if DEBUG_MODE then
         drawtext(tostr(player_x + world_scroll)..","..tostr(player_y), 0, 0, 8, 1)
         next_guy = hole_locations[1]
@@ -482,19 +642,31 @@ function render()
         animate(yuzu, YUZU_ANIM_SPEED, "Gliding")
         drawsprite(yuzu, player_x, player_y)
 
-        drawcursor(getwidth()/2 - 1.5*TILE_SIZE, getheight()/2 + (0.9 + menu_choice)*TILE_SIZE - TILE_SIZE)
+        drawcursor(getwidth()/2 - 2.5*TILE_SIZE, getheight()/2 + (0.9 + menu_choice)*TILE_SIZE - TILE_SIZE)
         drawtext("START", 0, getheight()/2, 35, 41, getwidth(), TILE_SIZE, 1, 1)
-        drawtext("EXIT", 0, getheight()/2 + TILE_SIZE, 11, 1, getwidth(), TILE_SIZE, 1, 1)
+        drawtext("DIFFICULTY", 0, getheight()/2 + TILE_SIZE, 31, 27, getwidth(), TILE_SIZE, 1, 1)
+        drawtext("EXIT", 0, getheight()/2 + 2*TILE_SIZE, 11, 1, getwidth(), TILE_SIZE, 1, 1)
 
     elseif state == STATES.Playing or state == STATES.Paused or state == STATES.Dead then
+        if state == STATES.Playing then
+            if frames_since_last_jump < JUMP_ANIM_FRAMES then
+                animate(yuzu, 2*YUZU_ANIM_SPEED, "DoubleJump")
+            else
+                animate(yuzu, YUZU_ANIM_SPEED, "Gliding")
+            end
+            animate(enemy, ENEMY_ANIM_SPEED, "Idle")
+        end
+
         for i=1,#hole_locations do
             hole_top = hole_locations[i].y
             hole_bottom = hole_locations[i].y + hole_locations[i].size
             length_top = 2 + int(hole_top/TILE_SIZE)
             length_bottom = 2 + int((getheight() - hole_bottom)/TILE_SIZE)
             top_offset = -(2*TILE_SIZE - (hole_top % TILE_SIZE)) -- move it up by a whole tile to hide the top of pipe graphics, then move it more to counteract the tile grid misalignment (math here looks funny bc i simplified it down from something that made more intuitive sense)
-            draw_pipe(hole_locations[i].x - world_scroll, top_offset, length_top)
-            draw_pipe(hole_locations[i].x - world_scroll, hole_bottom, length_bottom)
+            top_has_enemy = hole_locations[i].has_enemy == 1 or hole_locations[i].has_enemy == 3
+            bottom_has_enemy = hole_locations[i].has_enemy == 2 or hole_locations[i].has_enemy == 3
+            draw_pipe(hole_locations[i].x - world_scroll, top_offset, length_top, false, top_has_enemy)
+            draw_pipe(hole_locations[i].x - world_scroll, hole_bottom, length_bottom, bottom_has_enemy, false)
             if DEBUG_MODE then
                 drawrect(hole_locations[i].x - world_scroll, 0, TILE_SIZE*2, hole_locations[i].y, "0x990000FF")
                 drawrect(hole_locations[i].x - world_scroll, hole_locations[i].y, TILE_SIZE*2, hole_locations[i].size, "0x99FF0000")
@@ -503,23 +675,16 @@ function render()
         end
 
         rot = MAX_ROTATION * player_y_vel / TERMINAL_VELOCITY
-        if state == STATES.Playing then
-            if frames_since_last_jump < JUMP_ANIM_FRAMES then
-                animate(yuzu, 2*YUZU_ANIM_SPEED, "DoubleJump")
-            else
-                animate(yuzu, YUZU_ANIM_SPEED, "Gliding")
-            end
-        end
         drawsprite(yuzu, player_x, player_y, rot)
         if DEBUG_MODE then
             player_hitbox = get_player_hitbox_in_screenspace()
             drawrect(player_hitbox.x, player_hitbox.y, player_hitbox.width, player_hitbox.height, "0x9900FF00")
         end
 
-        drawtext("SCORE:", -TILE_SIZE, 0, 8, 1, getwidth(), TILE_SIZE, 1, 1)
-        drawtext("       "..tostr(score), 0, 0, 8, 1, getwidth(), TILE_SIZE, 1, 1)
-        drawtext("BEST:", -3*TILE_SIZE, getheight()-TILE_SIZE, 8, 1, getwidth(), TILE_SIZE, 2, 1)
-        drawtext("      "..tostr(best_score), -TILE_SIZE, getheight()-TILE_SIZE, 8, 1, getwidth(), TILE_SIZE, 2, 1)
+        drawtext("SCORE", 0, 0, 8, 1, getwidth(), TILE_SIZE, 1, 1)
+        drawtext(tostr(score), 0, TILE_SIZE, 8, 1, getwidth(), TILE_SIZE, 1, 1)
+        drawtext("BEST", 13*TILE_SIZE, 0, 8, 1, getwidth(), TILE_SIZE, 1, 1)
+        drawtext(tostr(best_score), 13*TILE_SIZE, TILE_SIZE, 8, 1, getwidth(), TILE_SIZE, 1, 1)
 
         if state == STATES.Paused then
             drawrect(0, 0, getwidth(), getheight(), "0x88000000")
@@ -532,7 +697,76 @@ function render()
 
             draw_pause_menu(-TILE_SIZE)
         end
+    elseif state == STATES.TailsScreen then
+        tails_level = h_spacing_tails + v_spacing_tails + speed_tails + enemy_tails
+        drawtext("CURRENT LEVEL:", 0, 0, 8, 1, getwidth(), TILE_SIZE, 1, 1)
+        drawtext(TAILS_LEVEL_NAMES[tails_level], 0, TILE_SIZE, TAILS_LEVEL_COLORS[tails_level], TAILS_LEVEL_OUTLINE_COLORS[tails_level], getwidth(), TILE_SIZE, 1, 1)
+        drawrect(TILE_SIZE*9, TILE_SIZE*2, TILE_SIZE*12, TILE_SIZE*12, "0xFFBBBBBB")
+        if menu_choice ~= 4 then
+            hlite_x = TILE_SIZE*9
+            hlite_y = TILE_SIZE*2
+            if menu_choice == 1 or menu_choice == 3 then
+                hlite_x = hlite_x + TILE_SIZE*6
+            end
+            if menu_choice == 2 or menu_choice == 3 then
+                hlite_y = hlite_y + TILE_SIZE*6
+            end
+            drawrect(hlite_x, hlite_y, TILE_SIZE*6, TILE_SIZE*6, "0xFF00FFFF")
+            drawrect(hlite_x + 4, hlite_y + 4, TILE_SIZE*6 - 8, TILE_SIZE*6 - 8, "0xFFFFFFFF")
+        end
+        drawtext("PIPE FREQ", TILE_SIZE*9, TILE_SIZE*2.5, 8, 1, TILE_SIZE*6, TILE_SIZE, 1, 1)
+        if h_spacing_tails == 1 then
+            color(25)
+        else
+            color(4)
+        end
+        drawimg(stamps_image, TILE_SIZE*11.25, TILE_SIZE*3.75, 0, 24, 23, 23)
+        color()
+        drawtext("MORE PIPES\nMORE SCORES", TILE_SIZE*9, TILE_SIZE*5, 8, 1, TILE_SIZE*6, TILE_SIZE*3, 1, 1)
+        
+        drawtext("GAP SIZE", TILE_SIZE*15, TILE_SIZE*2.5, 8, 1, TILE_SIZE*6, TILE_SIZE, 1, 1)
+        color(25)
+        for i=0,v_spacing_tails-1 do
+            drawimg(stamps_image, TILE_SIZE*15.75 + TILE_SIZE*1.5*i, TILE_SIZE*3.75, 0, 24, 23, 23)
+        end
+        color(4)
+        for i=v_spacing_tails,V_SPACING_TAILS_MAX-1 do
+            drawimg(stamps_image, TILE_SIZE*15.75 + TILE_SIZE*1.5*i, TILE_SIZE*3.75, 0, 24, 23, 23)
+        end
+        color()
+        drawtext("+"..tostr(0.25*v_spacing_tails).."X\nSCORE MULT", TILE_SIZE*15, TILE_SIZE*5, 8, 1, TILE_SIZE*6, TILE_SIZE*3, 1, 1)
+        
+        drawtext("H. SPEED", TILE_SIZE*9, TILE_SIZE*8.5, 8, 1, TILE_SIZE*6, TILE_SIZE, 1, 1)
+        color(25)
+        for i=0,speed_tails-1 do
+            drawimg(stamps_image, TILE_SIZE*9.75 + TILE_SIZE*1.5*i, TILE_SIZE*9.75, 0, 24, 23, 23)
+        end
+        color(4)
+        for i=speed_tails,SPEED_TAILS_MAX-1 do
+            drawimg(stamps_image, TILE_SIZE*9.75 + TILE_SIZE*1.5*i, TILE_SIZE*9.75, 0, 24, 23, 23)
+        end
+        color()
+        drawtext("MORE SPEED\nSCORE FASTER", TILE_SIZE*9, TILE_SIZE*11, 8, 1, TILE_SIZE*6, TILE_SIZE*3, 1, 1)
+        
+        drawtext("ENEMY FREQ", TILE_SIZE*15, TILE_SIZE*8.5, 8, 1, TILE_SIZE*6, TILE_SIZE, 1, 1)
+        color(25)
+        for i=0,enemy_tails-1 do
+            drawimg(stamps_image, TILE_SIZE*16.5 + TILE_SIZE*1.5*i, TILE_SIZE*9.75, 0, 24, 23, 23)
+        end
+        color(4)
+        for i=enemy_tails,ENEMY_TAILS_MAX-1 do
+            drawimg(stamps_image, TILE_SIZE*16.5 + TILE_SIZE*1.5*i, TILE_SIZE*9.75, 0, 24, 23, 23)
+        end
+        color()
+        drawtext("+"..tostr(0.25*enemy_tails).."X\nSCORE MULT", TILE_SIZE*15, TILE_SIZE*11, 8, 1, TILE_SIZE*6, TILE_SIZE*3, 1, 1)
+        
+        drawtext("DONE", 0, getheight()-2.5*TILE_SIZE, 35, 41, getwidth(), TILE_SIZE, 1, 1)
 
+        if menu_choice ~= 4 then
+            drawcursor(hlite_x + TILE_SIZE, hlite_y + TILE_SIZE*1.9) -- these were defined above. yay namespace leakage lol
+        else
+            drawcursor(getwidth()/2 - 2*TILE_SIZE, getheight()-2.5*TILE_SIZE)
+        end
     elseif state == STATES.Exiting then
         -- drawtext("bye", 0, 0, 18, 32, getwidth(), getheight(), 1, 1)
         -- this looks silly but this lua subset doesn't have string formatting and as far as i can tell you can ONLY do opacity by supplying colors as hex strings
