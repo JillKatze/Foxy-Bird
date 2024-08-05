@@ -612,13 +612,7 @@ function draw_bg_elements()
     generate_bushes()
 end
 
-function render()
-    drawmap(background_tiles, -(BG_MOVE_FACTOR * world_scroll % BG_WIDTH), 0)
-    drawmap(background_tiles, -(BG_MOVE_FACTOR * world_scroll % BG_WIDTH) + BG_WIDTH, 0)
-
-    draw_bg_elements()
-    draw_ground()
-
+function draw_tails_counter()
     -- use some rects to hack in a white tip to the tail lol
     drawrect(11, 10, 10, 6)
     drawrect(15, 3, 3, 7)
@@ -628,6 +622,14 @@ function render()
     drawimg(stamps_image, 0, 0, 0, 24, 23, 23)
     color()
     drawtext("x"..tostr(tails_level), TILE_SIZE*1.5, TILE_SIZE*0.25, TAILS_LEVEL_COLORS[tails_level], TAILS_LEVEL_OUTLINE_COLORS[tails_level], TILE_SIZE*2, TILE_SIZE, 0, 1)
+end
+
+function render()
+    drawmap(background_tiles, -(BG_MOVE_FACTOR * world_scroll % BG_WIDTH), 0)
+    drawmap(background_tiles, -(BG_MOVE_FACTOR * world_scroll % BG_WIDTH) + BG_WIDTH, 0)
+
+    draw_bg_elements()
+    draw_ground()
 
     if DEBUG_MODE then
         drawtext(tostr(player_x + world_scroll)..","..tostr(player_y), 0, 0, 8, 1)
@@ -646,7 +648,7 @@ function render()
         drawtext("START", 0, getheight()/2, 35, 41, getwidth(), TILE_SIZE, 1, 1)
         drawtext("DIFFICULTY", 0, getheight()/2 + TILE_SIZE, 31, 27, getwidth(), TILE_SIZE, 1, 1)
         drawtext("EXIT", 0, getheight()/2 + 2*TILE_SIZE, 11, 1, getwidth(), TILE_SIZE, 1, 1)
-
+        draw_tails_counter()
     elseif state == STATES.Playing or state == STATES.Paused or state == STATES.Dead then
         if state == STATES.Playing then
             if frames_since_last_jump < JUMP_ANIM_FRAMES then
@@ -685,6 +687,7 @@ function render()
         drawtext(tostr(score), 0, TILE_SIZE, 8, 1, getwidth(), TILE_SIZE, 1, 1)
         drawtext("BEST", 13*TILE_SIZE, 0, 8, 1, getwidth(), TILE_SIZE, 1, 1)
         drawtext(tostr(best_score), 13*TILE_SIZE, TILE_SIZE, 8, 1, getwidth(), TILE_SIZE, 1, 1)
+        draw_tails_counter()
 
         if state == STATES.Paused then
             drawrect(0, 0, getwidth(), getheight(), "0x88000000")

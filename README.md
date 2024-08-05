@@ -23,6 +23,9 @@ In other words, find the directory mentioned above for your system, then create 
 You could also just check this git repository out straight into your appropriate Kitsune Tails folder, but because the repository name has a hyphen instead of a space, it would show as "Foxy-Bird" in the menu since it shows the directory name there. The choice is yours!
 
 ## Changelog
+### Version 1.1a
+Fixed a layering issue with the difficulty indicator during gameplay. It was originally intentional for it to go behind the pipes but because I last-minute decided to move the high score counter up top, it ended up being the only piece of UI up top that wasn't always on top which ended up bothering me about 1 second after I released 1.1.
+
 ### Version 1.1
 - Reworked scoring system. Going through a single pipe is now worth a base 100 points due to the below changes.
 - Added "Tails Level" system
