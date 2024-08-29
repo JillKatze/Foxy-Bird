@@ -1,4 +1,4 @@
-FOXY_VERSION = "1.1a"
+FOXY_VERSION = "1.1b"
 
 TILE_SIZE = 16 --px
 INPUTS = { Left = 1, Right = 2, Up = 4, Down = 8, Main = 16, Alt = 32, Special = 64, Back = 128, Start = 256 }
@@ -176,7 +176,7 @@ end
 function loadresources()
     yuzu = sprite("YuzuBird")
     enemy = sprite("Rokurokubi")
-    background_tiles = loadbuiltin("bg 1 and 2.json", "tilemap")
+    background_tiles = loadbuiltin("bg-mountains-01.json", "tilemap")
     world_blocks = loadbuiltin("introworld-b.png", "image")
     func_blocks = loadbuiltin("function_blocks.png", "image")
     title_music = loadbuiltin("title.ogg", "music")
