@@ -9,6 +9,9 @@ A minigame about flapping birds for the Kitsune Tails mod framework.
 [![Foxy Bird 1.1 demo video on YouTube](https://img.youtube.com/vi/toBmm-OjRtg/0.jpg)](https://www.youtube.com/watch?v=toBmm-OjRtg)
 
 ## Installation
+[Now available on Steam Workshop!](https://steamcommunity.com/sharedfiles/filedetails/?id=3320404575)
+
+## Manual Installation
 From the official documentation:
 ```
 Minigames should be installed in the AppData\Roaming\KitsuneTails\scripts folder on Windows, in $XDG_DATA_HOME/KitsuneTails/scripts on Linux, or (should you have hacked Kitsune Tails to work on Mac) in ~/Library/Application Support/KitsuneTails/scripts.
