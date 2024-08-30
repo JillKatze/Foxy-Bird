@@ -176,7 +176,7 @@ end
 function loadresources()
     yuzu = sprite("YuzuBird")
     enemy = sprite("Rokurokubi")
-    background_tiles = loadbuiltin("bg-mountains-01.json", "tilemap")
+    background_tiles = loadbuiltin("bg-test.json", "tilemap")
     world_blocks = loadbuiltin("introworld-b.png", "image")
     func_blocks = loadbuiltin("function_blocks.png", "image")
     title_music = loadbuiltin("title.ogg", "music")
